@@ -1,0 +1,159 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Get a free hosted Postgres database in seconds: `npx create-db`
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  owner
+  member
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  password  String
+  role      Role     @default(owner)
+  company   String   @default("")
+  avatar    String   @default("")
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  leads     Lead[]
+  contacts  Contact[]
+  notes     Note[]
+  tasks     Task[]
+}
+
+enum LeadStatus {
+  New
+  Qualified
+  Proposal
+  Won
+  Lost
+}
+
+enum LeadPriority {
+  Low
+  Medium
+  High
+}
+
+enum LeadSource {
+  Website
+  Referral
+  ColdOutreach @map("Cold Outreach")
+  Social
+  Event
+  Other
+}
+
+model Lead {
+  id          Int          @id @default(autoincrement())
+  ownerId     Int
+  owner       User         @relation(fields: [ownerId], references: [id])
+  name        String
+  email       String       @default("")
+  phone       String       @default("")
+  company     String       @default("")
+  status      LeadStatus   @default(New)
+  priority    LeadPriority @default(Medium)
+  source      LeadSource   @default(Other)
+  value       Float        @default(0)
+  notes       String       @default("")
+  tags        String[]
+  aiSummary   String       @default("")
+  aiRiskScore Float?
+  order       Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  linkedNotes Note[]       // Changed from "notes" to avoid collision with the "notes" String field
+  tasks       Task[]
+
+  @@index([ownerId])
+  @@index([status])
+}
+
+model Contact {
+  id        Int      @id @default(autoincrement())
+  ownerId   Int
+  owner     User     @relation(fields: [ownerId], references: [id])
+  name      String
+  email     String   @default("")
+  phone     String   @default("")
+  company   String   @default("")
+  title     String   @default("")
+  tags      String[]
+  notes     String   @default("")
+  favorite  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  linkedNotes Note[] // Changed from "notes" to avoid collision with the "notes" String field
+  tasks       Task[]
+
+  @@index([ownerId])
+  // Prisma handles Postgres full-text search at the query level, 
+  // but we add normal indexes here to speed up lookups!
+  @@index([name])
+  @@index([email])
+  @@index([company])
+}
+
+model Note {
+  id        Int      @id @default(autoincrement())
+  ownerId   Int
+  owner     User     @relation(fields: [ownerId], references: [id])
+  content   String
+  leadId    Int?
+  lead      Lead?    @relation(fields: [leadId], references: [id])
+  contactId Int?
+  contact   Contact? @relation(fields: [contactId], references: [id])
+  pinned    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([ownerId])
+  @@index([leadId])
+  @@index([contactId])
+}
+
+enum TaskStatus {
+  Pending
+  InProgress @map("In Progress")
+  Completed
+}
+
+enum TaskPriority {
+  Low
+  Medium
+  High
+}
+
+model Task {
+  id              Int          @id @default(autoincrement())
+  ownerId         Int
+  owner           User         @relation(fields: [ownerId], references: [id])
+  title           String
+  description     String       @default("")
+  dueDate         DateTime?
+  status          TaskStatus   @default(Pending)
+  priority        TaskPriority @default(Medium)
+  relatedLeadId   Int?
+  relatedLead     Lead?        @relation(fields: [relatedLeadId], references: [id])
+  relatedContactId Int?
+  relatedContact  Contact?     @relation(fields: [relatedContactId], references: [id])
+  completedAt     DateTime?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  @@index([ownerId])
+  @@index([status])
+}
