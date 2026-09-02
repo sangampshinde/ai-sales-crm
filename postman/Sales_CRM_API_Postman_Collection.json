@@ -1,0 +1,1167 @@
+{
+  "info": {
+    "_postman_id": "c7a8e990-2b15-4fa8-9d25-783bf2f07ab1",
+    "name": "Sales CRM Platform API - Complete Test Suite",
+    "description": "Full end-to-end API test collection for Sales CRM Platform (Express + PostgreSQL + Prisma + Gemini AI).\nIncludes automated tests, dynamic JWT token extraction, and full CRUD workflows for Leads, Contacts, Notes, Tasks, AI Intelligence, and Analytics.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt_token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "item": [
+    {
+      "name": "00 - Health Check",
+      "item": [
+        {
+          "name": "API Health Check",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "pm.test(\"Health status is ok\", function () {",
+                  "    var jsonData = pm.response.json();",
+                  "    pm.expect(jsonData.status).to.eql(\"ok\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/health",
+              "host": ["{{base_url}}"],
+              "path": ["api", "health"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "01 - Authentication",
+      "item": [
+        {
+          "name": "Register New User",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const timestamp = Date.now();",
+                  "pm.environment.set(\"dynamic_email\", `postman_user_${timestamp}@crm.test`);"
+                ],
+                "type": "text/javascript"
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201 (Created)\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Returns success, JWT token and user info\", function () {",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.token).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.user).to.be.an(\"object\");",
+                  "});",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set(\"jwt_token\", jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Automation User\",\n  \"email\": \"{{dynamic_email}}\",\n  \"password\": \"TestPass@123\",\n  \"company\": \"Apex Innovations\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "Login (Seed User or Dynamic User)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200 (OK)\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Successful login returns valid token\", function () {",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.token).to.be.a(\"string\");",
+                  "});",
+                  "if (jsonData.token) {",
+                  "    pm.environment.set(\"jwt_token\", jsonData.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{dynamic_email}}\",\n  \"password\": \"TestPass@123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            }
+          }
+        },
+        {
+          "name": "Get Current User Profile (/me)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"User profile retrieved accurately\", function () {",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.user.name).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "Update User Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Company is updated\", function () {",
+                  "    pm.expect(jsonData.user.company).to.eql(\"Apex Global Tech\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Postman Automation Leader\",\n  \"company\": \"Apex Global Tech\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/profile",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "profile"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "02 - Leads (Pipeline & Deals)",
+      "item": [
+        {
+          "name": "Create Lead",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Lead has ID and correct attributes\", function () {",
+                  "    pm.expect(jsonData.lead.id).to.be.a(\"number\");",
+                  "    pm.expect(jsonData.lead.value).to.eql(65000);",
+                  "});",
+                  "if (jsonData.lead && jsonData.lead.id) {",
+                  "    pm.environment.set(\"lead_id\", jsonData.lead.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Quantum AI Computing Deal\",\n  \"company\": \"QuantumCore Labs\",\n  \"email\": \"deals@quantumcore.io\",\n  \"phone\": \"+1 555-8822\",\n  \"status\": \"Proposal\",\n  \"priority\": \"High\",\n  \"source\": \"Referral\",\n  \"value\": 65000,\n  \"notes\": \"Interested in high-performance cloud compute cluster.\",\n  \"tags\": [\"AI\", \"Enterprise\", \"Cloud\"]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/leads",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads"]
+            }
+          }
+        },
+        {
+          "name": "Get All Leads",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Returns list of leads\", function () {",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.leads).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/leads",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads"]
+            }
+          }
+        },
+        {
+          "name": "Filter Leads by Status & Search",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/leads?status=Proposal&search=Quantum",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads"],
+              "query": [
+                { "key": "status", "value": "Proposal" },
+                { "key": "search", "value": "Quantum" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Lead by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Fetched correct lead\", function () {",
+                  "    pm.expect(jsonData.lead.id).to.eql(parseInt(pm.environment.get(\"lead_id\")));",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/leads/{{lead_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads", "{{lead_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Lead",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Lead value updated to 78000\", function () {",
+                  "    pm.expect(jsonData.lead.value).to.eql(78000);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": 78000,\n  \"notes\": \"Upgraded to multi-region cloud cluster.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/leads/{{lead_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads", "{{lead_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Reorder Leads (Kanban Board Drag & Drop)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Pipeline updated message received\", function () {",
+                  "    pm.expect(jsonData.message).to.eql(\"Pipeline updated\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"updates\": [\n    {\n      \"id\": {{lead_id}},\n      \"status\": \"Won\",\n      \"order\": 0\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/leads/reorder",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads", "reorder"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "03 - Contacts",
+      "item": [
+        {
+          "name": "Create Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Contact created with ID\", function () {",
+                  "    pm.expect(jsonData.data.id).to.be.a(\"number\");",
+                  "});",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.environment.set(\"contact_id\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Victoria Hayes\",\n  \"email\": \"victoria@quantumcore.io\",\n  \"phone\": \"+1 555-9011\",\n  \"company\": \"QuantumCore Labs\",\n  \"title\": \"Director of Procurement\",\n  \"tags\": [\"Procurement\", \"Key Stakeholder\"],\n  \"favorite\": true,\n  \"notes\": \"Key commercial contact for hardware contract.\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/contacts",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contacts"]
+            }
+          }
+        },
+        {
+          "name": "Get Contacts (Search & Tag Filter)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Contacts returned in array\", function () {",
+                  "    pm.expect(jsonData.data).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/contacts?search=Victoria",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contacts"],
+              "query": [
+                { "key": "search", "value": "Victoria" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get Single Contact by ID",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/contacts/{{contact_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contacts", "{{contact_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Update Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Title updated\", function () {",
+                  "    pm.expect(jsonData.data.title).to.eql(\"VP of Global Procurement\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"VP of Global Procurement\",\n  \"favorite\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/contacts/{{contact_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contacts", "{{contact_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "04 - Notes",
+      "item": [
+        {
+          "name": "Create Note (Linked to Lead & Contact)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Note created and linked\", function () {",
+                  "    pm.expect(jsonData.data.id).to.be.a(\"number\");",
+                  "});",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.environment.set(\"note_id\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Contract terms finalized with Victoria. Signed MSA expected this week.\",\n  \"lead\": {{lead_id}},\n  \"contact\": {{contact_id}},\n  \"pinned\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notes",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"]
+            }
+          }
+        },
+        {
+          "name": "Get Notes (Filtered by Lead)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Includes populated relations\", function () {",
+                  "    pm.expect(jsonData.data).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes?lead={{lead_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes"],
+              "query": [
+                { "key": "lead", "value": "{{lead_id}}" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Updated: Signed MSA received and uploaded to legal drive.\",\n  \"pinned\": false\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/notes/{{note_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes", "{{note_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "05 - Tasks",
+      "item": [
+        {
+          "name": "Create Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 201\", function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.id) {",
+                  "    pm.environment.set(\"task_id\", jsonData.data.id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Send final invoice and provisioning credentials\",\n  \"description\": \"Generate tenant API keys and notify customer success team.\",\n  \"status\": \"Pending\",\n  \"priority\": \"High\",\n  \"dueDate\": \"2026-09-15T10:00:00.000Z\",\n  \"relatedLead\": {{lead_id}},\n  \"relatedContact\": {{contact_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tasks",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks"]
+            }
+          }
+        },
+        {
+          "name": "Get Tasks (Filter by Status)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tasks?status=Pending",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks"],
+              "query": [
+                { "key": "status", "value": "Pending" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update Task (Mark Completed & Check CompletedAt)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Status is Completed and completedAt is set\", function () {",
+                  "    pm.expect(jsonData.data.status).to.eql(\"Completed\");",
+                  "    pm.expect(jsonData.data.completedAt).to.not.be.null;",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"Completed\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "{{task_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "06 - AI Intelligence",
+      "item": [
+        {
+          "name": "Get AI Configuration Status",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"AI status configured flag is boolean\", function () {",
+                  "    pm.expect(jsonData.configured).to.be.a(\"boolean\");",
+                  "    pm.expect(jsonData.model).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/ai/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "status"]
+            }
+          }
+        },
+        {
+          "name": "AI Generate Lead Summary & Risk Score",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Summary and Risk Score returned\", function () {",
+                  "    pm.expect(jsonData.summary).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.riskScore).to.be.a(\"number\");",
+                  "    pm.expect(jsonData.nextBestAction).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": {{lead_id}}\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/lead-summary",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "lead-summary"]
+            }
+          }
+        },
+        {
+          "name": "AI Draft Sales Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Returns subject and email body\", function () {",
+                  "    pm.expect(jsonData.subject).to.be.a(\"string\");",
+                  "    pm.expect(jsonData.body).to.be.a(\"string\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leadId\": {{lead_id}},\n  \"purpose\": \"follow-up on multi-region compute contract\",\n  \"tone\": \"executive\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/generate-email",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "generate-email"]
+            }
+          }
+        },
+        {
+          "name": "AI Strategic Sales Insights",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Insights object has healthScore, insights, and recommendations\", function () {",
+                  "    pm.expect(jsonData.healthScore).to.be.a(\"number\");",
+                  "    pm.expect(jsonData.insights).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.recommendations).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/ai/sales-insights",
+              "host": ["{{base_url}}"],
+              "path": ["api", "ai", "sales-insights"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "07 - Analytics & Dashboard",
+      "item": [
+        {
+          "name": "Get CRM Overview Metrics",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "var jsonData = pm.response.json();",
+                  "pm.test(\"Overview response contains full dashboard payload\", function () {",
+                  "    pm.expect(jsonData.success).to.be.true;",
+                  "    pm.expect(jsonData.data.stats).to.be.an(\"object\");",
+                  "    pm.expect(jsonData.data.stats.totalPipelineValue).to.be.a(\"number\");",
+                  "    pm.expect(jsonData.data.stats.winRate).to.be.a(\"number\");",
+                  "    pm.expect(jsonData.data.pipeline).to.be.an(\"object\");",
+                  "    pm.expect(jsonData.data.trend).to.be.an(\"array\");",
+                  "    pm.expect(jsonData.data.recentLeads).to.be.an(\"array\");",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/analytics/overview",
+              "host": ["{{base_url}}"],
+              "path": ["api", "analytics", "overview"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "08 - Cleanup & Resource Deletion",
+      "item": [
+        {
+          "name": "Delete Task",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/tasks/{{task_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "tasks", "{{task_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Note",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/notes/{{note_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "notes", "{{note_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Contact",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/contacts/{{contact_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "contacts", "{{contact_id}}"]
+            }
+          }
+        },
+        {
+          "name": "Delete Lead",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/leads/{{lead_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads", "{{lead_id}}"]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "09 - Security & Error Assertions",
+      "item": [
+        {
+          "name": "401 Unauthorized (No Token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 401\", function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            }
+          }
+        },
+        {
+          "name": "400 Bad Request (Missing registration fields)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 400\", function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid_user@crm.test\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            }
+          }
+        },
+        {
+          "name": "404 Not Found (Deleted or non-existent lead)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/leads/9999999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "leads", "9999999"]
+            }
+          }
+        },
+        {
+          "name": "404 Route Not Found (Unknown URL)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 404\", function () {",
+                  "    pm.response.to.have.status(404);",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/unknown-endpoint-xyz",
+              "host": ["{{base_url}}"],
+              "path": ["api", "unknown-endpoint-xyz"]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

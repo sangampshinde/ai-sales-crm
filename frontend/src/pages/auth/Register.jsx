@@ -22,7 +22,7 @@ export default function Register() {
     setSubmitting(true);
     try {
       await registerUser(data);
-      toast.success("Account created — welcome to TTP CRM! 🎉");
+      toast.success("Account created — welcome to Sales CRM! 🎉");
       navigate("/", { replace: true });
     } catch (err) {
       toast.error(err.message || "Registration failed");
@@ -43,7 +43,7 @@ export default function Register() {
           <div className="relative">
             <User className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
             <Input
-              placeholder="Sujon Ahmed"
+              placeholder="Alex Morgan"
               className="pl-9"
               {...register("name", { required: "Name is required" })}
             />
@@ -54,7 +54,7 @@ export default function Register() {
           <div className="relative">
             <Building2 className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-ink-soft" />
             <Input
-              placeholder="Time To Program"
+              placeholder="Acme Corp"
               className="pl-9"
               {...register("company")}
             />

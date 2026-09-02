@@ -57,7 +57,6 @@ export const login = asyncHandler(async (req, res) => {
         where: { email: email.toLowerCase() } 
     });
     
-    // Our custom Prisma Extension `matchPassword` works exactly like the tutorial's Mongoose method!
     if (!user || !(await user.matchPassword(password))) {
         throw new ApiError(401, "Invalid email or password");
     }
@@ -69,4 +68,27 @@ export const login = asyncHandler(async (req, res) => {
     });
 });
 
-// TODO: Paste your logout function below!
+export const getMe = asyncHandler(async (req, res) => { 
+    res.json({ 
+        success: true, 
+        user: toClientUser(req.user) 
+    });
+});
+
+export const updateProfile = asyncHandler(async (req, res) => {
+    const { name, company, avatar, password } = req.body;
+    
+    // Using Prisma instead of Mongoose's user.save()
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (company !== undefined) updateData.company = company;
+    if (avatar !== undefined) updateData.avatar = avatar;
+    if (password) updateData.password = password;
+    
+    const updatedUser = await User.update({
+        where: { id: req.user.id },
+        data: updateData
+    });
+    
+    res.json({ success: true, user: toClientUser(updatedUser) });
+});

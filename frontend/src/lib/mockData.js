@@ -13,10 +13,10 @@ const today = () => new Date().toISOString();
 
 export const mockUser = {
   id: "u1",
-  name: "Alex Carter",
-  email: "alex@timetoprogram.com",
+  name: "Alex Morgan",
+  email: "alex@salescrm.com",
   role: "owner",
-  company: "Time To Program",
+  company: "Acme Cloud",
   avatar: "",
   createdAt: daysAgo(240),
 };
@@ -163,7 +163,7 @@ export const mockAiEmail = {
   success: true,
   subject: "Quick follow-up on next steps",
   body:
-    "Hi there,\n\nThanks again for the great conversation earlier this week. I wanted to follow up with a quick summary of how we can help your team hit its goals this quarter.\n\nWould you be open to a 20-minute call later this week to walk through the proposal and answer any questions?\n\nBest,\nAlex Carter\nTime To Program",
+    "Hi there,\n\nThanks again for the great conversation earlier this week. I wanted to follow up with a quick summary of how we can help your team hit its goals this quarter.\n\nWould you be open to a 20-minute call later this week to walk through the proposal and answer any questions?\n\nBest,\nAlex Morgan\nAcme Cloud",
 };
 
 export const mockAiInsights = {
