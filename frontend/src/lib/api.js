@@ -2,7 +2,11 @@ import axios from "axios";
 
 export const TOKEN_KEY = "sales_crm_token";
 
-const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8000/api";
+let rawBase = (import.meta.env.VITE_API_URL || "http://localhost:8000/api").trim().replace(/\/+$/, "");
+if (!rawBase.endsWith("/api")) {
+  rawBase = `${rawBase}/api`;
+}
+const baseURL = rawBase;
 
 const api = axios.create({ baseURL });
 
